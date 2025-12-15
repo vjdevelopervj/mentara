@@ -33,34 +33,69 @@ $daftar_konsultasi = $stmt->fetchAll();
         </div>
 
         <div class="main-content">
-            <h1>Daftar Konsultasi</h1>
+            <div class="page-header">
+                <div>
+                    <h1><i class="fas fa-list"></i> Daftar Konsultasi</h1>
+                    <p>Kelola semua sesi konsultasi pasien</p>
+                </div>
+            </div>
 
-            <table class="table">
-                <thead>
-                    <tr>
-                        <th>Tanggal</th>
-                        <th>Pasien</th>
-                        <th>Usia</th>
-                        <th>Keluhan</th>
-                        <th>Dokter</th>
-                        <th>Pesan</th>
-                        <th>Status</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <?php foreach ($daftar_konsultasi as $konsultasi): ?>
-                    <tr>
-                        <td><?php echo date('d/m/Y H:i', strtotime($konsultasi['dibuat_pada'])); ?></td>
-                        <td><?php echo htmlspecialchars($konsultasi['nama_pasien']); ?></td>
-                        <td><?php echo $konsultasi['usia_pasien']; ?></td>
-                        <td><?php echo htmlspecialchars($konsultasi['keluhan']); ?></td>
-                        <td><?php echo htmlspecialchars($konsultasi['nama_dokter'] ?? 'Belum ditugaskan'); ?></td>
-                        <td><?php echo $konsultasi['jumlah_pesan']; ?></td>
-                        <td><?php echo ucfirst($konsultasi['status']); ?></td>
-                    </tr>
-                    <?php endforeach; ?>
-                </tbody>
-            </table>
+            <div class="content-area">
+                <div class="content-section">
+                    <div class="section-header">
+                        <h3><i class="fas fa-table"></i> Data Konsultasi</h3>
+                    </div>
+
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Tanggal</th>
+                                <th>Pasien</th>
+                                <th>Usia</th>
+                                <th>Keluhan</th>
+                                <th>Dokter</th>
+                                <th>Pesan</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php foreach ($daftar_konsultasi as $konsultasi): ?>
+                            <tr>
+                                <td><?php echo date('d/m/Y H:i', strtotime($konsultasi['dibuat_pada'])); ?></td>
+                                <td><?php echo htmlspecialchars($konsultasi['nama_pasien']); ?></td>
+                                <td><?php echo $konsultasi['usia_pasien']; ?></td>
+                                <td><?php echo htmlspecialchars($konsultasi['keluhan']); ?></td>
+                                <td><?php echo htmlspecialchars($konsultasi['nama_dokter'] ?? 'Belum ditugaskan'); ?></td>
+                                <td>
+                                    <span class="message-count">
+                                        <i class="fas fa-comment"></i>
+                                        <?php echo $konsultasi['jumlah_pesan']; ?>
+                                    </span>
+                                </td>
+                                <td>
+                                    <?php
+                                    $status = $konsultasi['status'];
+                                    $badge_class = 'completed';
+                                    $status_icon = 'fa-check-circle';
+                                    if ($status === 'aktif') {
+                                        $badge_class = 'active';
+                                        $status_icon = 'fa-clock';
+                                    } elseif ($status === 'dibatalkan') {
+                                        $badge_class = 'cancelled';
+                                        $status_icon = 'fa-times-circle';
+                                    }
+                                    ?>
+                                    <span class="status-badge <?php echo $badge_class; ?>">
+                                        <i class="fas <?php echo $status_icon; ?>"></i>
+                                        <?php echo ucfirst($status); ?>
+                                    </span>
+                                </td>
+                            </tr>
+                            <?php endforeach; ?>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
         </div>
     </div>
 </body>

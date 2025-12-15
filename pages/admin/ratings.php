@@ -33,34 +33,47 @@ $daftar_rating = $stmt->fetchAll();
         </div>
 
         <div class="main-content">
-            <h1>Rating dan Penilaian</h1>
+            <div class="page-header">
+                <div>
+                    <h1><i class="fas fa-star"></i> Rating dan Penilaian</h1>
+                    <p>Lihat umpan balik pasien untuk sesi konsultasi</p>
+                </div>
+            </div>
 
-            <table class="table">
-                <thead>
-                    <tr>
-                        <th>Tanggal</th>
-                        <th>Pasien</th>
-                        <th>Dokter</th>
-                        <th>Rating</th>
-                        <th>Komentar</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <?php foreach ($daftar_rating as $rating): ?>
-                    <tr>
-                        <td><?php echo date('d/m/Y H:i', strtotime($rating['dibuat_pada'])); ?></td>
-                        <td><?php echo htmlspecialchars($rating['nama_pasien']); ?></td>
-                        <td><?php echo htmlspecialchars($rating['nama_dokter']); ?></td>
-                        <td>
-                            <?php for ($i = 1; $i <= 5; $i++): ?>
-                                <i class="fas fa-star" style="color: <?php echo $i <= $rating['rating'] ? '#ffc107' : '#ddd'; ?>"></i>
-                            <?php endfor; ?>
-                        </td>
-                        <td><?php echo htmlspecialchars($rating['komentar_rating']); ?></td>
-                    </tr>
-                    <?php endforeach; ?>
-                </tbody>
-            </table>
+            <div class="content-area">
+                <div class="content-section">
+                    <div class="section-header">
+                        <h3><i class="fas fa-table"></i> Daftar Rating</h3>
+                    </div>
+
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Tanggal</th>
+                                <th>Pasien</th>
+                                <th>Dokter</th>
+                                <th>Rating</th>
+                                <th>Komentar</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php foreach ($daftar_rating as $rating): ?>
+                            <tr>
+                                <td><?php echo date('d/m/Y H:i', strtotime($rating['dibuat_pada'])); ?></td>
+                                <td><?php echo htmlspecialchars($rating['nama_pasien']); ?></td>
+                                <td><?php echo htmlspecialchars($rating['nama_dokter']); ?></td>
+                                <td>
+                                    <?php for ($i = 1; $i <= 5; $i++): ?>
+                                        <i class="fas fa-star" style="color: <?php echo $i <= $rating['rating'] ? '#ffc107' : '#ddd'; ?>"></i>
+                                    <?php endfor; ?>
+                                </td>
+                                <td><?php echo htmlspecialchars($rating['komentar_rating']); ?></td>
+                            </tr>
+                            <?php endforeach; ?>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
         </div>
     </div>
 </body>
