@@ -39,8 +39,7 @@ CREATE TABLE `agenda_dokter` (
   `tipe` enum('konseling','assessment','rapor','other') DEFAULT 'konseling',
   `status` enum('terjadwal','berlangsung','selesai','dibatalkan') DEFAULT 'terjadwal',
   `dibuat_pada` timestamp NULL DEFAULT CURRENT_TIMESTAMP
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
-
+);
 --
 -- Dumping data for table `agenda_dokter`
 --
@@ -66,8 +65,7 @@ CREATE TABLE `pengguna` (
   `jadwal` text,
   `aktif` tinyint(1) DEFAULT '1',
   `dibuat_pada` timestamp NULL DEFAULT CURRENT_TIMESTAMP
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
-
+);
 --
 -- Dumping data for table `pengguna`
 --
@@ -91,7 +89,7 @@ CREATE TABLE `pesan` (
   `pengirim` enum('pasien','dokter') NOT NULL,
   `pesan` text NOT NULL,
   `dibuat_pada` timestamp NULL DEFAULT CURRENT_TIMESTAMP
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+);
 
 --
 -- Dumping data for table `pesan`
