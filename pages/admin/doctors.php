@@ -51,74 +51,107 @@ $dokter_list = $stmt->fetchAll();
         </div>
 
         <div class="main-content">
-            <h1>Kelola Dokter</h1>
-
-            <button onclick="toggleForm()" class="btn">Tambah Dokter Baru</button>
-
-            <div id="add-doctor-form" style="display: none; margin-top: 2rem; background-color: #fff; padding: 2rem; border-radius: 10px; box-shadow: 0 0 10px rgba(0,0,0,0.1);">
-                <h2>Tambah Dokter Baru</h2>
-                <form action="doctors.php" method="post">
-                    <div class="form-group">
-                        <label for="nama_pengguna">Nama Pengguna:</label>
-                        <input type="text" id="nama_pengguna" name="nama_pengguna" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="kata_sandi">Kata Sandi:</label>
-                        <input type="password" id="kata_sandi" name="kata_sandi" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="nama">Nama Lengkap:</label>
-                        <input type="text" id="nama" name="nama" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="spesialisasi">Spesialisasi:</label>
-                        <input type="text" id="spesialisasi" name="spesialisasi" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="jadwal">Jadwal:</label>
-                        <textarea id="jadwal" name="jadwal" rows="3" required></textarea>
-                    </div>
-                    <button type="submit" name="tambah_dokter" class="btn">Tambah Dokter</button>
-                </form>
+            <div class="page-header">
+                <div>
+                    <h1><i class="fas fa-user-md"></i> Kelola Dokter</h1>
+                    <p>Tambah dokter baru dan atur status aktif.</p>
+                </div>
+                <div>
+                    <button onclick="toggleForm()" class="btn">
+                        <i class="fas fa-plus-circle"></i>
+                        Tambah Dokter
+                    </button>
+                </div>
             </div>
 
-            <h2 style="margin-top: 2rem;">Daftar Dokter</h2>
-            <table class="table">
-                <thead>
-                    <tr>
-                        <th>Nama</th>
-                        <th>Spesialisasi</th>
-                        <th>Jadwal</th>
-                        <th>Status</th>
-                        <th>Aksi</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <?php foreach ($dokter_list as $dokter): ?>
-                    <tr>
-                        <td><?php echo htmlspecialchars($dokter['nama']); ?></td>
-                        <td><?php echo htmlspecialchars($dokter['spesialisasi']); ?></td>
-                        <td><?php echo htmlspecialchars($dokter['jadwal']); ?></td>
-                        <td><?php echo $dokter['aktif'] ? 'Aktif' : 'Nonaktif'; ?></td>
-                        <td>
-                            <form action="doctors.php" method="post" style="display: inline;">
-                                <input type="hidden" name="id_dokter" value="<?php echo $dokter['id']; ?>">
-                                <button type="submit" name="ubah_status" class="btn btn-warning">
-                                    <?php echo $dokter['aktif'] ? 'Nonaktifkan' : 'Aktifkan'; ?>
-                                </button>
-                            </form>
-                        </td>
-                    </tr>
-                    <?php endforeach; ?>
-                </tbody>
-            </table>
+            <div class="content-area">
+                <div id="add-doctor-form" class="content-section">
+                    <div class="section-header">
+                        <h3><i class="fas fa-user-plus"></i> Tambah Dokter Baru</h3>
+                    </div>
+                    <div class="section-body">
+                        <form action="doctors.php" method="post">
+                            <div class="form-group">
+                                <label for="nama_pengguna">Nama Pengguna:</label>
+                                <input type="text" id="nama_pengguna" name="nama_pengguna" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="kata_sandi">Kata Sandi:</label>
+                                <input type="password" id="kata_sandi" name="kata_sandi" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="nama">Nama Lengkap:</label>
+                                <input type="text" id="nama" name="nama" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="spesialisasi">Spesialisasi:</label>
+                                <input type="text" id="spesialisasi" name="spesialisasi" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="jadwal">Jadwal:</label>
+                                <textarea id="jadwal" name="jadwal" rows="3" required></textarea>
+                            </div>
+                            <button type="submit" name="tambah_dokter" class="btn">
+                                <i class="fas fa-save"></i>
+                                Tambah Dokter
+                            </button>
+                        </form>
+                    </div>
+                </div>
+
+                <div class="content-section">
+                    <div class="section-header">
+                        <h3><i class="fas fa-users"></i> Daftar Dokter</h3>
+                    </div>
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Nama</th>
+                                <th>Spesialisasi</th>
+                                <th>Jadwal</th>
+                                <th>Status</th>
+                                <th>Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php foreach ($dokter_list as $dokter): ?>
+                            <tr>
+                                <td><?php echo htmlspecialchars($dokter['nama']); ?></td>
+                                <td><?php echo htmlspecialchars($dokter['spesialisasi']); ?></td>
+                                <td><?php echo htmlspecialchars($dokter['jadwal']); ?></td>
+                                <td>
+                                    <?php if ($dokter['aktif']): ?>
+                                        <span class="status-badge active"><i class="fas fa-check-circle"></i> Aktif</span>
+                                    <?php else: ?>
+                                        <span class="status-badge inactive"><i class="fas fa-ban"></i> Nonaktif</span>
+                                    <?php endif; ?>
+                                </td>
+                                <td>
+                                    <form action="doctors.php" method="post">
+                                        <input type="hidden" name="id_dokter" value="<?php echo $dokter['id']; ?>">
+                                        <button type="submit" name="ubah_status" class="btn btn-warning">
+                                            <?php if ($dokter['aktif']): ?>
+                                                <i class="fas fa-user-slash"></i> Nonaktifkan
+                                            <?php else: ?>
+                                                <i class="fas fa-user-check"></i> Aktifkan
+                                            <?php endif; ?>
+                                        </button>
+                                    </form>
+                                </td>
+                            </tr>
+                            <?php endforeach; ?>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
         </div>
     </div>
 
     <script>
         function toggleForm() {
             const form = document.getElementById('add-doctor-form');
-            form.style.display = form.style.display === 'none' ? 'block' : 'none';
+            const isHidden = window.getComputedStyle(form).display === 'none';
+            form.style.display = isHidden ? 'block' : 'none';
         }
     </script>
 </body>
