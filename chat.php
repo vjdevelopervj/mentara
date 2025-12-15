@@ -30,18 +30,24 @@ $pesan_list = $stmt->fetchAll();
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Chat Konsultasi - Mentara</title>
     <link rel="stylesheet" href="assets/css/style.css">
+    <link rel="stylesheet" href="navbarchat.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
 <body>
     <header>
         <nav class="container">
-            <div class="logo">Mentara</div>
+            <div class="logo">
+                <img class="logo-white" src="assets/images/mentara-logo.png" alt="logo">
+                <img class="logo-colored" src="assets/images/mentara-logo-colored.png" alt="logo-colored">
+                Mentara
+            </div>
             <ul class="nav-links">
                 <li><a href="index.php">Beranda</a></li>
-                <li><a href="counselors.php">Konselor</a></li>
-                <li><a href="patient_form.php">Chat</a></li>
-                <li><a href="articles.php">Artikel</a></li>
-                <li><a href="help.php">Bantuan</a></li>
+                <li><a href="#counselors">Konselor</a></li>
+                <li><a href="#chat">Chat</a></li>
+                <li><a href="#articles">Artikel</a></li>
+                <li><a href="#help">Bantuan</a></li>
+                <li><a href="login.php" class="btn-login">Login Dokter/Admin</a></li>
             </ul>
         </nav>
     </header>
@@ -70,12 +76,6 @@ $pesan_list = $stmt->fetchAll();
             </div>
         </div>
     </main>
-
-    <footer>
-        <div class="container">
-            <p>&copy; 2023 Mentara. Semua hak dilindungi.</p>
-        </div>
-    </footer>
 
     <script>
         // Auto scroll to bottom
