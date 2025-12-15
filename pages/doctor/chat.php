@@ -51,9 +51,77 @@ $stmt = $pdo->prepare("
 ");
 $stmt->execute([$id_pengguna]);
 $statistik_status = $stmt->fetchAll(PDO::FETCH_KEY_PAIR);
+
+
+?>
+
+<?php
+include '../../includes/db.php';
+include '../../includes/functions.php';
+
+alihkan_jika_belum_login();
+alihkan_jika_bukan_dokter();
+
+$id_pengguna = $_SESSION['id_pengguna'];
+
+// DEBUG: Log user ID
+error_log("Doctor ID: " . $id_pengguna);
+
+// Filter status
+$status = $_GET['status'] ?? 'semua';
+$search = $_GET['search'] ?? '';
+
+// Query untuk semua sesi chat
+$sql = "
+    SELECT sc.*, 
+           COUNT(p.id) as jumlah_pesan,
+           MAX(p.dibuat_pada) as pesan_terakhir
+    FROM sesi_chat sc 
+    LEFT JOIN pesan p ON sc.id = p.id_sesi 
+    WHERE sc.id_dokter = ?
+";
+
+$params = [$id_pengguna];
+
+// Filter berdasarkan status
+if ($status != 'semua') {
+    $sql .= " AND sc.status = ?";
+    $params[] = $status;
+}
+
+// Filter berdasarkan pencarian
+if (!empty($search)) {
+    $sql .= " AND (sc.nama_pasien LIKE ? OR sc.keluhan LIKE ?)";
+    $searchTerm = "%$search%";
+    $params[] = $searchTerm;
+    $params[] = $searchTerm;
+}
+
+$sql .= " GROUP BY sc.id ORDER BY COALESCE(pesan_terakhir, sc.diperbarui_pada) DESC";
+
+error_log("SQL Query: " . $sql);
+error_log("Params: " . print_r($params, true));
+
+$stmt = $pdo->prepare($sql);
+$stmt->execute($params);
+$semua_sesi = $stmt->fetchAll();
+
+// DEBUG: Log jumlah sesi ditemukan
+error_log("Total sessions found: " . count($semua_sesi));
+
+// Hitung statistik per status
+$stmt = $pdo->prepare("
+    SELECT status, COUNT(*) as jumlah 
+    FROM sesi_chat 
+    WHERE id_dokter = ? 
+    GROUP BY status
+");
+$stmt->execute([$id_pengguna]);
+$statistik_status = $stmt->fetchAll(PDO::FETCH_KEY_PAIR);
 ?>
 <!DOCTYPE html>
 <html lang="id">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -62,6 +130,7 @@ $statistik_status = $stmt->fetchAll(PDO::FETCH_KEY_PAIR);
     <link rel="stylesheet" href="../../assets/css/chat_list.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
+
 <body>
     <div class="doctor-container">
         <!-- Sidebar -->
@@ -98,13 +167,13 @@ $statistik_status = $stmt->fetchAll(PDO::FETCH_KEY_PAIR);
                 <div class="search-box">
                     <i class="fas fa-search"></i>
                     <form method="GET" action="chat.php">
-                        <input type="text" name="search" placeholder="Cari pasien atau keluhan..." 
-                               value="<?php echo htmlspecialchars($search); ?>">
+                        <input type="text" name="search" placeholder="Cari pasien atau keluhan..."
+                            value="<?php echo htmlspecialchars($search); ?>">
                         <input type="hidden" name="status" value="<?php echo $status; ?>">
                         <button type="submit" class="btn-search">Cari</button>
                     </form>
                 </div>
-                
+
                 <div class="filter-tabs">
                     <a href="?status=semua" class="filter-tab <?php echo $status == 'semua' ? 'active' : ''; ?>">
                         <span>Semua</span>
@@ -182,9 +251,9 @@ $statistik_status = $stmt->fetchAll(PDO::FETCH_KEY_PAIR);
                 <div class="chat-list" id="chatList">
                     <?php if (count($semua_sesi) > 0): ?>
                         <?php foreach ($semua_sesi as $sesi): ?>
-                            <div class="chat-item" data-id="<?php echo $sesi['id']; ?>" 
-                                 data-time="<?php echo strtotime($sesi['diperbarui_pada']); ?>"
-                                 data-name="<?php echo strtolower($sesi['nama_pasien']); ?>">
+                            <div class="chat-item" data-id="<?php echo $sesi['id']; ?>"
+                                data-time="<?php echo strtotime($sesi['diperbarui_pada']); ?>"
+                                data-name="<?php echo strtolower($sesi['nama_pasien']); ?>">
                                 <div class="chat-item-left">
                                     <div class="patient-avatar <?php echo $sesi['status']; ?>">
                                         <?php if ($sesi['status'] == 'aktif'): ?>
@@ -220,7 +289,7 @@ $statistik_status = $stmt->fetchAll(PDO::FETCH_KEY_PAIR);
                                         </div>
                                     </div>
                                 </div>
-                                
+
                                 <div class="chat-actions">
                                     <?php if ($sesi['status'] == 'aktif'): ?>
                                         <a href="chat_session.php?id_sesi=<?php echo $sesi['id']; ?>" class="btn-chat-action primary">
@@ -308,11 +377,11 @@ $statistik_status = $stmt->fetchAll(PDO::FETCH_KEY_PAIR);
 
     <script>
         // Sort functionality
-        document.getElementById('sortSelect').addEventListener('change', function() {
+        document.getElementById('sortSelect')?.addEventListener('change', function() {
             const sortBy = this.value;
             const chatList = document.getElementById('chatList');
             const chatItems = Array.from(chatList.querySelectorAll('.chat-item'));
-            
+
             chatItems.sort((a, b) => {
                 if (sortBy === 'terbaru') {
                     return b.dataset.time - a.dataset.time;
@@ -323,45 +392,49 @@ $statistik_status = $stmt->fetchAll(PDO::FETCH_KEY_PAIR);
                 }
                 return 0;
             });
-            
+
             chatList.innerHTML = '';
             chatItems.forEach(item => chatList.appendChild(item));
         });
 
         // Dropdown menu
-        document.querySelectorAll('.btn-more').forEach(btn => {
-            btn.addEventListener('click', function(e) {
-                e.stopPropagation();
-                const menu = this.nextElementSibling;
-                const isVisible = menu.style.display === 'block';
-                
-                // Close all other dropdowns
-                document.querySelectorAll('.dropdown-menu').forEach(m => {
-                    m.style.display = 'none';
-                });
-                
-                // Toggle current dropdown
-                menu.style.display = isVisible ? 'none' : 'block';
-            });
-        });
+        function attachDropdownListeners() {
+            document.querySelectorAll('.btn-more').forEach(btn => {
+                btn.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    const menu = this.nextElementSibling;
+                    const isVisible = menu.style.display === 'block';
 
-        // Close dropdown when clicking outside
-        document.addEventListener('click', function() {
-            document.querySelectorAll('.dropdown-menu').forEach(menu => {
-                menu.style.display = 'none';
+                    // Close all other dropdowns
+                    document.querySelectorAll('.dropdown-menu').forEach(m => {
+                        m.style.display = 'none';
+                    });
+
+                    // Toggle current dropdown
+                    menu.style.display = isVisible ? 'none' : 'block';
+                });
             });
-        });
+
+            // Close dropdown when clicking outside
+            document.addEventListener('click', function() {
+                document.querySelectorAll('.dropdown-menu').forEach(menu => {
+                    menu.style.display = 'none';
+                });
+            });
+        }
 
         // Delete confirmation
         let chatToDelete = null;
-        
-        document.querySelectorAll('.delete-chat').forEach(btn => {
-            btn.addEventListener('click', function(e) {
-                e.preventDefault();
-                chatToDelete = this.dataset.id;
-                document.getElementById('deleteModal').style.display = 'flex';
+
+        function attachDeleteListeners() {
+            document.querySelectorAll('.delete-chat').forEach(btn => {
+                btn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    chatToDelete = this.dataset.id;
+                    document.getElementById('deleteModal').style.display = 'flex';
+                });
             });
-        });
+        }
 
         // Modal close buttons
         document.querySelectorAll('.modal-close, .btn-cancel').forEach(btn => {
@@ -372,23 +445,23 @@ $statistik_status = $stmt->fetchAll(PDO::FETCH_KEY_PAIR);
         });
 
         // Confirm delete
-        document.querySelector('.btn-confirm').addEventListener('click', function() {
+        document.querySelector('.btn-confirm')?.addEventListener('click', function() {
             if (chatToDelete) {
                 fetch(`delete_chat.php?id=${chatToDelete}`, {
-                    method: 'DELETE'
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        location.reload();
-                    } else {
-                        alert(data.message);
-                    }
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                    alert('Terjadi kesalahan saat menghapus chat');
-                });
+                        method: 'DELETE'
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            location.reload();
+                        } else {
+                            alert(data.message);
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        alert('Terjadi kesalahan saat menghapus chat');
+                    });
             }
             document.getElementById('deleteModal').style.display = 'none';
         });
@@ -397,35 +470,207 @@ $statistik_status = $stmt->fetchAll(PDO::FETCH_KEY_PAIR);
         function exportChats(format) {
             const status = '<?php echo $status; ?>';
             const search = '<?php echo urlencode($search); ?>';
-            
+
             window.open(`export_chats.php?format=${format}&status=${status}&search=${search}`, '_blank');
         }
 
-        // Auto refresh chat list every 30 seconds
-        setInterval(() => {
-            if (!document.querySelector('.modal[style*="display: flex"]')) {
-                location.reload();
-            }
-        }, 30000);
-
         // Highlight active chat items
-        document.querySelectorAll('.chat-item').forEach(item => {
-            item.addEventListener('click', function(e) {
-                if (!e.target.closest('.chat-actions')) {
-                    const chatId = this.dataset.id;
-                    window.location.href = `chat_session.php?id_sesi=${chatId}`;
+        function attachChatItemListeners() {
+            document.querySelectorAll('.chat-item').forEach(item => {
+                item.addEventListener('click', function(e) {
+                    if (!e.target.closest('.chat-actions')) {
+                        const chatId = this.dataset.id;
+                        window.location.href = `chat_session.php?id_sesi=${chatId}`;
+                    }
+                });
+
+                // Add hover effect
+                item.addEventListener('mouseenter', function() {
+                    this.style.backgroundColor = '#f8f9fa';
+                });
+
+                item.addEventListener('mouseleave', function() {
+                    this.style.backgroundColor = 'white';
+                });
+            });
+        }
+
+        // Auto refresh chat list
+        let autoRefresh = true;
+        let refreshInterval;
+
+        function refreshChatList() {
+            if (autoRefresh && !document.querySelector('.modal[style*="display: flex"]')) {
+                const currentUrl = new URL(window.location.href);
+                const params = new URLSearchParams(currentUrl.search);
+
+                // Menambahkan timestamp untuk menghindari cache
+                params.append('_t', Date.now());
+
+                fetch(`refresh_chat_list.php?${params.toString()}`)
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error('Network response was not ok');
+                        }
+                        return response.text();
+                    })
+                    .then(html => {
+                        if (html.trim()) {
+                            const tempDiv = document.createElement('div');
+                            tempDiv.innerHTML = html;
+                            const newChatList = tempDiv.querySelector('.chat-list');
+                            if (newChatList) {
+                                document.querySelector('.chat-list').innerHTML = newChatList.innerHTML;
+
+                                // Re-attach all event listeners
+                                attachDropdownListeners();
+                                attachDeleteListeners();
+                                attachChatItemListeners();
+
+                                // Highlight new messages
+                                highlightNewMessages();
+
+                                // Update last refresh time
+                                updateLastRefresh();
+                            } else {
+                                // Jika tidak ada .chat-list, ganti seluruh konten
+                                document.querySelector('.chat-list').innerHTML = html;
+
+                                // Re-attach all event listeners
+                                attachDropdownListeners();
+                                attachDeleteListeners();
+                                attachChatItemListeners();
+                            }
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Refresh error:', error);
+                        // Jika error, reload halaman setelah 60 detik
+                        setTimeout(() => {
+                            if (autoRefresh) location.reload();
+                        }, 60000);
+                    });
+            }
+        }
+
+        function highlightNewMessages() {
+            const lastUpdate = localStorage.getItem('lastChatUpdate') || Date.now();
+            const now = Date.now();
+
+            // Check for new messages in each chat item
+            document.querySelectorAll('.chat-item').forEach(item => {
+                const itemTime = parseInt(item.dataset.time) * 1000;
+                if (itemTime > lastUpdate) {
+                    // Add highlight animation
+                    item.classList.add('new-message');
+
+                    // Remove highlight after 5 seconds
+                    setTimeout(() => {
+                        item.classList.remove('new-message');
+                    }, 5000);
                 }
             });
-            
-            // Add hover effect
-            item.addEventListener('mouseenter', function() {
-                this.style.backgroundColor = '#f8f9fa';
-            });
-            
-            item.addEventListener('mouseleave', function() {
-                this.style.backgroundColor = 'white';
-            });
+
+            localStorage.setItem('lastChatUpdate', now);
+        }
+
+        function updateLastRefresh() {
+            localStorage.setItem('lastRefresh', Date.now());
+        }
+
+        // Initialize all event listeners
+        function initializeListeners() {
+            attachDropdownListeners();
+            attachDeleteListeners();
+            attachChatItemListeners();
+
+            // Check for new messages on load
+            highlightNewMessages();
+        }
+
+        // Start auto-refresh
+        function startAutoRefresh(interval = 5000) {
+            if (refreshInterval) clearInterval(refreshInterval);
+            refreshInterval = setInterval(refreshChatList, interval);
+        }
+
+        // Pause auto-refresh ketika user sedang berinteraksi dengan modal
+        function setupModalObserver() {
+            const modal = document.getElementById('deleteModal');
+            if (modal) {
+                const observer = new MutationObserver(function(mutations) {
+                    mutations.forEach(function(mutation) {
+                        if (mutation.attributeName === 'style') {
+                            autoRefresh = modal.style.display === 'none';
+                            if (autoRefresh) {
+                                startAutoRefresh(5000);
+                            } else {
+                                if (refreshInterval) clearInterval(refreshInterval);
+                            }
+                        }
+                    });
+                });
+
+                observer.observe(modal, {
+                    attributes: true
+                });
+            }
+        }
+
+        // Initialize everything when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeListeners();
+            setupModalObserver();
+            startAutoRefresh(5000); // Refresh setiap 5 detik
+
+            // Also refresh immediately on load
+            setTimeout(refreshChatList, 1000);
         });
+
+        // Add CSS for new message animation
+        const style = document.createElement('style');
+        style.textContent = `
+    @keyframes pulse {
+        0% { box-shadow: 0 0 0 0 rgba(67, 97, 238, 0.4); }
+        70% { box-shadow: 0 0 0 10px rgba(67, 97, 238, 0); }
+        100% { box-shadow: 0 0 0 0 rgba(67, 97, 238, 0); }
+    }
+    
+    .chat-item.new-message {
+        animation: pulse 2s infinite;
+        border-left: 4px solid #4361ee;
+        background-color: rgba(67, 97, 238, 0.05);
+    }
+    
+    /* Smooth transition for chat list updates */
+    .chat-list {
+        transition: opacity 0.3s ease;
+    }
+    
+    .chat-list.updating {
+        opacity: 0.7;
+    }
+`;
+        document.head.appendChild(style);
+
+        // Handle page visibility changes
+        document.addEventListener('visibilitychange', function() {
+            if (document.hidden) {
+                if (refreshInterval) clearInterval(refreshInterval);
+                autoRefresh = false;
+            } else {
+                autoRefresh = true;
+                startAutoRefresh(2000); // Refresh lebih cepat saat kembali
+                refreshChatList(); // Refresh segera
+            }
+        });
+
+        // Refresh when coming back from chat session
+        if (performance.navigation.type === 2) {
+            // Page was accessed via back/forward button
+            setTimeout(refreshChatList, 500);
+        }
     </script>
 </body>
+
 </html>
