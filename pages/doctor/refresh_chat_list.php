@@ -1,6 +1,7 @@
 <?php
 session_start();
 require_once '../../includes/db.php';
+require_once '../../includes/functions.php';
 
 $id_pengguna = $_SESSION['id_pengguna'] ?? null;
 if (!$id_pengguna) exit;
