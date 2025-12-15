@@ -67,10 +67,10 @@ $daftar_konsultasi = $stmt->fetchAll();
                                 <td><?php echo htmlspecialchars($konsultasi['keluhan']); ?></td>
                                 <td><?php echo htmlspecialchars($konsultasi['nama_dokter'] ?? 'Belum ditugaskan'); ?></td>
                                 <td>
-                                    <span class="message-count">
+                                    <a class="message-count" href="consultation_detail.php?id_sesi=<?php echo $konsultasi['id']; ?>" title="Lihat pesan">
                                         <i class="fas fa-comment"></i>
                                         <?php echo $konsultasi['jumlah_pesan']; ?>
-                                    </span>
+                                    </a>
                                 </td>
                                 <td>
                                     <?php

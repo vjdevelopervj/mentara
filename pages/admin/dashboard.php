@@ -111,7 +111,7 @@ $avg_rating = $avg_rating ? round($avg_rating, 1) : 0;
                                 <td><?php echo date('d/m/Y H:i', strtotime($aktivitas['dibuat_pada'])); ?></td>
                                 <td><i class="fas fa-comment-dots"></i> Sesi Konsultasi</td>
                                 <td>
-                                    <?php echo htmlspecialchars($aktivitas['nama_pasien']); ?>
+                                    <span class="activity-detail"><?php echo htmlspecialchars($aktivitas['nama_pasien']); ?></span>
                                     <span class="message-count">
                                         <i class="fas fa-comment"></i>
                                         <?php echo $aktivitas['jumlah_pesan']; ?>
