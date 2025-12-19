@@ -7,16 +7,45 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $nama = bersihkan($_POST['nama']);
     $usia = (int)$_POST['usia'];
     $keluhan = bersihkan($_POST['keluhan']);
+    $dokter_id = (isset($_POST['dokter_id']) && $_POST['dokter_id'] !== '') ? (int)$_POST['dokter_id'] : null;
+    // Jika session sudah punya id_sesi_chat, kembali ke chat tanpa membuat duplikat
+    if (isset($_SESSION['id_sesi_chat']) && !empty($_SESSION['id_sesi_chat'])) {
+        $existingId = (int)$_SESSION['id_sesi_chat'];
+        $check = $pdo->prepare("SELECT id FROM sesi_chat WHERE id = ? LIMIT 1");
+        $check->execute([$existingId]);
+        if ($check->fetch()) {
+            // respond for both fetch and normal form submit
+            header('Location: chat.php');
+            echo json_encode(['redirect' => 'chat.php']);
+            exit;
+        } else {
+            // session id invalid, remove it and continue
+            unset($_SESSION['id_sesi_chat']);
+        }
+    }
 
-    // Buat sesi chat
-    $stmt = $pdo->prepare("INSERT INTO sesi_chat (nama_pasien, usia_pasien, keluhan, status) VALUES (?, ?, ?, 'aktif')");
-    $stmt->execute([$nama, $usia, $keluhan]);
+    // Cek apakah ada sesi serupa baru-baru ini (hindari double submit)
+    $dupCheck = $pdo->prepare("SELECT id FROM sesi_chat WHERE nama_pasien = ? AND usia_pasien = ? AND keluhan = ? AND COALESCE(id_dokter, 0) <=> COALESCE(?,0) AND dibuat_pada >= (NOW() - INTERVAL 30 SECOND) LIMIT 1");
+    $dupCheck->execute([$nama, $usia, $keluhan, $dokter_id]);
+    $found = $dupCheck->fetch();
+    if ($found) {
+        $_SESSION['id_sesi_chat'] = $found['id'];
+        $_SESSION['nama_pasien'] = $nama;
+        header('Location: chat.php');
+        echo json_encode(['redirect' => 'chat.php']);
+        exit;
+    }
+
+    // Buat sesi chat (simpan id dokter jika ada)
+    $stmt = $pdo->prepare("INSERT INTO sesi_chat (nama_pasien, usia_pasien, keluhan, id_dokter, status, dibuat_pada, diperbarui_pada) VALUES (?, ?, ?, ?, 'aktif', NOW(), NOW())");
+    $stmt->execute([$nama, $usia, $keluhan, $dokter_id]);
     $id_sesi = $pdo->lastInsertId();
 
     $_SESSION['id_sesi_chat'] = $id_sesi;
     $_SESSION['nama_pasien'] = $nama;
 
     header('Location: chat.php');
+    echo json_encode(['redirect' => 'chat.php']);
     exit;
 }
 ?>

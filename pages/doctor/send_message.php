@@ -10,6 +10,39 @@ $id_pengguna = $_SESSION['id_pengguna'];
 $status = $_GET['status'] ?? 'semua';
 $search = $_GET['search'] ?? '';
 
+// Handle AJAX send message from doctor
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['message']) && isset($_POST['id_sesi'])) {
+    $id_sesi = (int)$_POST['id_sesi'];
+    $pesan = bersihkan($_POST['message']);
+
+    // Ensure this doctor owns the session
+    $stmtChk = $pdo->prepare("SELECT id_dokter FROM sesi_chat WHERE id = ?");
+    $stmtChk->execute([$id_sesi]);
+    $row = $stmtChk->fetch();
+
+    if ($row && $row['id_dokter'] == $id_pengguna) {
+        $stmt = $pdo->prepare("INSERT INTO pesan (id_sesi, pengirim, pesan) VALUES (?, 'dokter', ?)");
+        $stmt->execute([$id_sesi, $pesan]);
+
+        // Update sesi_chat diperbarui_pada
+        $stmtUp = $pdo->prepare("UPDATE sesi_chat SET diperbarui_pada = NOW() WHERE id = ?");
+        $stmtUp->execute([$id_sesi]);
+
+        // Kembalikan daftar pesan terbaru untuk sesi ini
+        $stmt2 = $pdo->prepare("SELECT p.*, CASE WHEN p.pengirim = 'dokter' THEN COALESCE(d.nama, 'Dokter') ELSE 'Pasien' END as nama_pengirim FROM pesan p LEFT JOIN sesi_chat sc ON p.id_sesi = sc.id LEFT JOIN pengguna d ON sc.id_dokter = d.id WHERE p.id_sesi = ? ORDER BY p.dibuat_pada ASC");
+        $stmt2->execute([$id_sesi]);
+        $messages = $stmt2->fetchAll(PDO::FETCH_ASSOC);
+
+        header('Content-Type: application/json');
+        echo json_encode(['success' => true, 'messages' => $messages]);
+        exit;
+    }
+
+    header('Content-Type: application/json');
+    echo json_encode(['success' => false, 'error' => 'Unauthorized or session not found']);
+    exit;
+}
+
 // Query untuk semua sesi chat
 $sql = "
     SELECT sc.*, COUNT(p.id) as jumlah_pesan 

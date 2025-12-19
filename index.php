@@ -524,58 +524,18 @@ $kontak_darurat = [
                 <h1>Mulai Konsultasi</h1>
                 <p>Pilih dokter dan isi data diri untuk memulai sesi konsultasi.</p>
 
-                <!-- Pilihan Dokter -->
+                <!-- Pilih Konselor (dropdown) -->
                 <div class="doctor-selection">
-                    <h3><i class="fas fa-user-md"></i> Pilih Dokter Anda</h3>
-                    <p class="selection-subtitle">Pilih dokter yang paling sesuai dengan kebutuhan Anda</p>
+                    <h3><i class="fas fa-user-md"></i> Pilih Konselor</h3>
+                    <p class="selection-subtitle">Pilih konselor yang paling sesuai dengan kebutuhan Anda</p>
 
-                    <div class="doctor-grid">
-                        <?php if (!empty($dokter_list)): ?>
+                    <div style="max-width:500px; margin-top:1rem;">
+                        <select id="dokterSelect" name="dokter_id" style="width:100%; padding:0.75rem; border-radius:6px;" required>
+                            <option value="">-- Pilih Konselor --</option>
                             <?php foreach ($dokter_list as $dokter): ?>
-                                <div class="doctor-card" data-dokter-id="<?php echo $dokter['id']; ?>"
-                                    data-dokter-nama="<?php echo htmlspecialchars($dokter['nama']); ?>">
-                                    <div class="doctor-card-header">
-                                        <div class="doctor-avatar">
-                                            <i class="fas fa-user-md"></i>
-                                        </div>
-                                        <div class="doctor-basic-info">
-                                            <h4>Dr. <?php echo htmlspecialchars($dokter['nama']); ?></h4>
-                                            <span class="doctor-specialty"><?php echo htmlspecialchars($dokter['spesialisasi'] ?? 'Psikolog'); ?></span>
-                                        </div>
-                                    </div>
-
-                                    <div class="doctor-card-body">
-                                        <div class="doctor-info-item">
-                                            <i class="fas fa-graduation-cap"></i>
-                                            <span><?php echo htmlspecialchars($dokter['pendidikan'] ?? 'S2 Psikologi'); ?></span>
-                                        </div>
-                                        <div class="doctor-info-item">
-                                            <i class="fas fa-briefcase"></i>
-                                            <span><?php echo htmlspecialchars($dokter['pengalaman'] ?? '5+ tahun'); ?></span>
-                                        </div>
-                                    </div>
-
-                                    <div class="doctor-card-footer">
-                                        <button type="button" class="btn-select-dokter">
-                                            <i class="fas fa-check-circle"></i>
-                                            <span>Pilih Dokter Ini</span>
-                                        </button>
-                                        <div class="doctor-status">
-                                            <span class="status-badge <?php echo ($dokter['status_online'] ?? 0) ? 'online' : 'offline'; ?>">
-                                                <i class="fas fa-circle"></i>
-                                                <?php echo ($dokter['status_online'] ?? 0) ? 'Online' : 'Offline'; ?>
-                                            </span>
-                                        </div>
-                                    </div>
-                                </div>
+                                <option value="<?php echo $dokter['id']; ?>">Dr. <?php echo htmlspecialchars($dokter['nama']); ?><?php echo !empty($dokter['spesialisasi']) ? ' - '.htmlspecialchars($dokter['spesialisasi']) : ''; ?></option>
                             <?php endforeach; ?>
-                        <?php else: ?>
-                            <div class="no-doctors">
-                                <i class="fas fa-user-md-slash"></i>
-                                <h4>Belum ada dokter yang tersedia</h4>
-                                <p>Silakan coba lagi nanti atau hubungi admin untuk informasi lebih lanjut.</p>
-                            </div>
-                        <?php endif; ?>
+                        </select>
                     </div>
                 </div>
 
@@ -583,19 +543,6 @@ $kontak_darurat = [
                 <div class="consultation-form-wrapper" id="consultationForm">
                     <div class="form-header">
                         <h3><i class="fas fa-file-medical"></i> Formulir Konsultasi</h3>
-                        <div class="selected-doctor-display" id="selectedDoctorDisplay">
-                            <div class="selected-doctor-info">
-                                <i class="fas fa-user-md"></i>
-                                <div>
-                                    <strong>Dokter yang Dipilih:</strong>
-                                    <span id="selectedDoctorName">Belum ada dokter dipilih</span>
-                                </div>
-                            </div>
-                            <button type="button" class="btn-change-doctor" id="btnChangeDoctor">
-                                <i class="fas fa-exchange-alt"></i>
-                                Ganti Dokter
-                            </button>
-                        </div>
                     </div>
 
                     <form id="consultation-form" style="max-width: 500px; margin: 0 auto;">
@@ -617,6 +564,14 @@ $kontak_darurat = [
                             </label>
                             <input type="number" id="usia" name="usia" min="1" max="120" required
                                 placeholder="Masukkan usia">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="keluhan">
+                                <i class="fas fa-notes-medical"></i>
+                                Keluhan
+                            </label>
+                            <textarea id="keluhan" name="keluhan" rows="4" placeholder="Jelaskan keluhan atau alasan konsultasi Anda" required></textarea>
                         </div>
 
                         <div class="form-actions">
@@ -943,175 +898,87 @@ $kontak_darurat = [
         // updateNavbarStyle();
     </script>
     <script>
-// JavaScript untuk pilihan dokter sederhana
+// JavaScript untuk pilihan konselor menggunakan dropdown
 document.addEventListener('DOMContentLoaded', function() {
-    // Elements
-    const doctorCards = document.querySelectorAll('.doctor-card');
-    const selectedDoctorName = document.getElementById('selectedDoctorName');
-    const selectedDoctorDisplay = document.getElementById('selectedDoctorDisplay');
+    const dokterSelect = document.getElementById('dokterSelect');
     const dokterIdInput = document.getElementById('dokterId');
-    const btnChangeDoctor = document.getElementById('btnChangeDoctor');
     const btnStartChat = document.getElementById('btnStartChat');
     const consultationForm = document.getElementById('consultation-form');
-    
-    // State
-    let selectedDoctor = null;
-    
-    // Doctor Selection Logic
-    doctorCards.forEach(card => {
-        card.addEventListener('click', function() {
-            // Hapus selected class dari semua cards
-            doctorCards.forEach(c => c.classList.remove('selected'));
-            
-            // Tambah selected class ke card yang diklik
-            this.classList.add('selected');
-            
-            // Update tombol pilih dokter
-            const button = this.querySelector('.btn-select-dokter');
-            button.innerHTML = '<i class="fas fa-check-circle"></i><span>Terpilih</span>';
-            button.classList.add('selected');
-            
-            // Update selected doctor
-            selectedDoctor = {
-                id: this.dataset.dokterId,
-                name: this.dataset.dokterNama
-            };
-            
-            // Update form display
-            updateFormDisplay();
-            
-            // Scroll ke form
-            document.getElementById('consultationForm').scrollIntoView({
-                behavior: 'smooth',
-                block: 'start'
-            });
-        });
-    });
-    
-    // Update form display
-    function updateFormDisplay() {
-        if (selectedDoctor) {
-            selectedDoctorName.textContent = selectedDoctor.name;
-            dokterIdInput.value = selectedDoctor.id;
-            selectedDoctorDisplay.style.display = 'flex';
-            btnStartChat.disabled = false;
+
+    function showAlert(message, type = 'info') {
+        const existingAlert = document.querySelector('.alert');
+        if (existingAlert) existingAlert.remove();
+        const alertDiv = document.createElement('div');
+        alertDiv.className = `alert alert-${type}`;
+        alertDiv.innerHTML = `\n            <i class="fas fa-${type === 'warning' ? 'exclamation-triangle' : 'check-circle'}"></i>\n            <span>${message}</span>\n        `;
+        consultationForm.parentNode.insertBefore(alertDiv, consultationForm);
+        setTimeout(() => { if (alertDiv.parentNode) alertDiv.remove(); }, 5000);
+    }
+
+    function updateFormState() {
+        if (dokterSelect && dokterSelect.value) {
+            if (dokterIdInput) dokterIdInput.value = dokterSelect.value;
+            if (btnStartChat) btnStartChat.disabled = false;
         } else {
-            selectedDoctorName.textContent = 'Belum ada dokter dipilih';
-            dokterIdInput.value = '';
-            selectedDoctorDisplay.style.display = 'none';
-            btnStartChat.disabled = true;
+            if (dokterIdInput) dokterIdInput.value = '';
+            if (btnStartChat) btnStartChat.disabled = true;
         }
     }
-    
-    // Change doctor button
-    btnChangeDoctor.addEventListener('click', function() {
-        selectedDoctor = null;
-        updateFormDisplay();
-        
-        // Reset doctor cards
-        doctorCards.forEach(card => {
-            card.classList.remove('selected');
-            const button = card.querySelector('.btn-select-dokter');
-            button.innerHTML = '<i class="fas fa-check-circle"></i><span>Pilih Dokter Ini</span>';
-            button.classList.remove('selected');
-        });
-        
-        // Scroll back to doctor selection
-        document.querySelector('.doctor-selection').scrollIntoView({
-            behavior: 'smooth',
-            block: 'start'
-        });
-    });
-    
-    // Form submission
+
+    if (dokterSelect) {
+        dokterSelect.addEventListener('change', updateFormState);
+    }
+
     consultationForm.addEventListener('submit', function(e) {
         e.preventDefault();
-        
-        // Check if doctor is selected
-        if (!selectedDoctor) {
-            showAlert('Silakan pilih dokter terlebih dahulu', 'warning');
+
+        if (!dokterIdInput || !dokterIdInput.value) {
+            showAlert('Silakan pilih konselor terlebih dahulu', 'warning');
             return;
         }
-        
-        // Validate form
+
         const nama = document.getElementById('nama').value.trim();
         const usia = document.getElementById('usia').value;
-        
+        const keluhan = document.getElementById('keluhan') ? document.getElementById('keluhan').value.trim() : '';
+
         if (!nama || !usia) {
             showAlert('Harap lengkapi nama dan usia', 'warning');
             return;
         }
-        
-        // Show loading state
+
+        if (!keluhan) {
+            showAlert('Harap jelaskan keluhan Anda sebelum memulai konsultasi', 'warning');
+            return;
+        }
+
         const originalText = btnStartChat.innerHTML;
         btnStartChat.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Memproses...';
         btnStartChat.disabled = true;
-        
-        // Submit form
+
         const formData = new FormData(this);
-        
-        fetch('patient_form.php', {
-            method: 'POST',
-            body: formData
-        })
-        .then(response => response.text())
-        .then(data => {
-            // Handle response
-            if (data.includes('chat.php') || data.includes('Location:')) {
-                // Redirect to chat page
-                window.location.href = 'chat.php';
-            } else {
-                // Try to parse as JSON
+        fetch('patient_form.php', { method: 'POST', body: formData })
+            .then(response => response.text())
+            .then(data => {
                 try {
                     const result = JSON.parse(data);
                     if (result.redirect) {
                         window.location.href = result.redirect;
-                    } else {
-                        window.location.href = 'chat.php';
+                        return;
                     }
                 } catch (e) {
-                    // Default redirect
-                    window.location.href = 'chat.php';
+                    // ignore
                 }
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            showAlert('Terjadi kesalahan. Silakan coba lagi.', 'warning');
-            btnStartChat.innerHTML = originalText;
-            btnStartChat.disabled = false;
-        });
+                window.location.href = 'chat.php';
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showAlert('Terjadi kesalahan. Silakan coba lagi.', 'warning');
+                btnStartChat.innerHTML = originalText;
+                btnStartChat.disabled = false;
+            });
     });
-    
-    // Alert function
-    function showAlert(message, type = 'info') {
-        // Remove existing alerts
-        const existingAlert = document.querySelector('.alert');
-        if (existingAlert) {
-            existingAlert.remove();
-        }
-        
-        // Create alert element
-        const alertDiv = document.createElement('div');
-        alertDiv.className = `alert alert-${type}`;
-        alertDiv.innerHTML = `
-            <i class="fas fa-${type === 'warning' ? 'exclamation-triangle' : 'check-circle'}"></i>
-            <span>${message}</span>
-        `;
-        
-        // Insert before form
-        consultationForm.parentNode.insertBefore(alertDiv, consultationForm);
-        
-        // Auto remove after 5 seconds
-        setTimeout(() => {
-            if (alertDiv.parentNode) {
-                alertDiv.remove();
-            }
-        }, 5000);
-    }
-    
-    // Initialize
-    updateFormDisplay();
+
+    updateFormState();
 });
 </script>
 </body>

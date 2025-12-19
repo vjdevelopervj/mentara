@@ -60,16 +60,16 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['status'])) {
     exit;
 }
 
-// PERBAIKAN: Query yang benar untuk pesan
-$stmt = $pdo->prepare("
-    SELECT p.*, 
+// Ambil pesan dan nama pengirim (dokter diambil dari sesi_chat.id_dokter)
+$stmt = $pdo->prepare("    SELECT p.*, 
            CASE 
-               WHEN p.pengirim = 'dokter' THEN d.nama 
+               WHEN p.pengirim = 'dokter' THEN COALESCE(d.nama, 'Dokter') 
                WHEN p.pengirim = 'sistem' THEN 'Sistem'
                ELSE 'Pasien' 
            END as nama_pengirim
     FROM pesan p
-    LEFT JOIN pengguna d ON (p.pengirim = 'dokter' AND d.id = p.id)
+    LEFT JOIN sesi_chat sc ON p.id_sesi = sc.id
+    LEFT JOIN pengguna d ON sc.id_dokter = d.id
     WHERE p.id_sesi = ? 
     ORDER BY p.dibuat_pada ASC
 ");
@@ -349,5 +349,15 @@ $pesan_pasien = count(array_filter($messages, fn($m) => $m['pengirim'] === 'pasi
     </div>
 
     <script src="../../assets/js/chat_session.js"></script>
+    <script>
+        // expose session id to the external JS
+        window.SESSION_ID = <?php echo json_encode($id_sesi); ?>;
+        window.GET_MESSAGES_URL = '../../get_messages.php';
+        // For doctor view we want to fetch messages coming from pasien
+        window.ONLY_FROM = 'pasien';
+    </script>
+    <script>
+        // No realtime socket configured; using polling only
+    </script>
 </body>
 </html>

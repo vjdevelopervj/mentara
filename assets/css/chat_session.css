@@ -364,6 +364,9 @@ body {
     flex-direction: column;
     gap: 1rem;
     background: #f9f9f9;
+    /* Limit height so long conversations scroll and layout stays tidy */
+    max-height: 60vh;
+    min-height: 180px;
 }
 
 /* Message Styles */

@@ -21,7 +21,12 @@ function autoResize(textarea) {
 
 // Load messages with AJAX
 function loadMessages() {
-    fetch(`get_messages.php?id_sesi=<?php echo $id_sesi; ?>`)
+    if (typeof window.SESSION_ID === 'undefined' || typeof window.GET_MESSAGES_URL === 'undefined') return;
+    let url = `${window.GET_MESSAGES_URL}?id_sesi=${window.SESSION_ID}`;
+    if (typeof window.ONLY_FROM !== 'undefined' && window.ONLY_FROM) {
+        url += `&only_from=${encodeURIComponent(window.ONLY_FROM)}`;
+    }
+    fetch(url)
         .then(response => response.json())
         .then(data => {
             if (data.success) {
@@ -133,7 +138,15 @@ document.getElementById('chatForm')?.addEventListener('submit', async function(e
             messageInput.value = '';
             messageInput.style.height = 'auto';
             hideTypingIndicator();
-            loadMessages();
+            // If endpoint returned messages use them to update immediately, otherwise trigger load
+            if (data.messages && Array.isArray(data.messages)) {
+                const messagesContainer = document.getElementById('chatMessages');
+                messagesContainer.innerHTML = '';
+                data.messages.forEach(message => messagesContainer.appendChild(createMessageElement(message)));
+                setTimeout(scrollToBottom, 100);
+            } else {
+                loadMessages();
+            }
             showNotification('Pesan berhasil dikirim');
             messageInput.focus();
         } else {
@@ -204,7 +217,9 @@ function printSession() {
 
 // Export session
 function exportSession() {
-    window.open(`export_session.php?id_sesi=<?php echo $id_sesi; ?>`, '_blank');
+    if (typeof window.SESSION_ID !== 'undefined') {
+        window.open(`export_session.php?id_sesi=${window.SESSION_ID}`, '_blank');
+    }
 }
 
 // Clear chat
@@ -215,12 +230,74 @@ function clearChat() {
 }
 
 // Auto refresh every 2 seconds
-setInterval(loadMessages, 2000);
+// Long-polling implementation
+let lastMessageId = 0;
+function getLongPollUrl() {
+    const base = (typeof window.GET_MESSAGES_URL !== 'undefined') ? window.GET_MESSAGES_URL : 'get_messages.php';
+    return base.replace(/get_messages\.php$/, 'get_messages_longpoll.php');
+}
+
+function initialLoadAndStart() {
+    if (typeof window.SESSION_ID === 'undefined' || typeof window.GET_MESSAGES_URL === 'undefined') return;
+    // load current messages once
+    let url = `${window.GET_MESSAGES_URL}?id_sesi=${window.SESSION_ID}`;
+    if (typeof window.ONLY_FROM !== 'undefined' && window.ONLY_FROM) {
+        url += `&only_from=${encodeURIComponent(window.ONLY_FROM)}`;
+    }
+    fetch(url)
+        .then(r => r.json())
+        .then(data => {
+            const messagesContainer = document.getElementById('chatMessages');
+            if (!messagesContainer) return;
+            messagesContainer.innerHTML = '';
+            if (data.messages && data.messages.length) {
+                data.messages.forEach(message => {
+                    messagesContainer.appendChild(createMessageElement(message));
+                    if (message.id && message.id > lastMessageId) lastMessageId = message.id;
+                });
+            }
+            scrollToBottom();
+            startLongPoll();
+        })
+        .catch(err => {
+            console.error('Initial load error', err);
+            // still try long poll
+            startLongPoll();
+        });
+}
+
+function startLongPoll() {
+    if (typeof window.SESSION_ID === 'undefined') return;
+    const lpUrl = getLongPollUrl();
+    let url = `${lpUrl}?id_sesi=${window.SESSION_ID}&since_id=${lastMessageId}`;
+    if (typeof window.ONLY_FROM !== 'undefined' && window.ONLY_FROM) {
+        url += `&only_from=${encodeURIComponent(window.ONLY_FROM)}`;
+    }
+    fetch(url, { cache: 'no-store' })
+        .then(r => r.json())
+        .then(data => {
+            if (data && data.messages && data.messages.length) {
+                const messagesContainer = document.getElementById('chatMessages');
+                const wasAtBottom = messagesContainer.scrollHeight - messagesContainer.scrollTop === messagesContainer.clientHeight;
+                data.messages.forEach(message => {
+                    messagesContainer.appendChild(createMessageElement(message));
+                    if (message.id && message.id > lastMessageId) lastMessageId = message.id;
+                });
+                if (wasAtBottom) setTimeout(scrollToBottom, 50);
+            }
+            // reconnect immediately
+            setTimeout(startLongPoll, 50);
+        })
+        .catch(err => {
+            console.error('Long poll error', err);
+            setTimeout(startLongPoll, 2000);
+        });
+}
 
 // Initial setup
 document.addEventListener('DOMContentLoaded', function() {
     scrollToBottom();
-    loadMessages();
+    initialLoadAndStart();
     
     // Enter to send, Shift+Enter for new line
     const messageInput = document.getElementById('messageInput');

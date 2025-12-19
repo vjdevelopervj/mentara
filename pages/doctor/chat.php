@@ -154,12 +154,12 @@ $statistik_status = $stmt->fetchAll(PDO::FETCH_KEY_PAIR);
                     <h1><i class="fas fa-comments"></i> Daftar Chat</h1>
                     <p>Kelola semua sesi konseling dengan pasien</p>
                 </div>
-                <div class="header-right">
+                <!-- <div class="header-right">
                     <a href="chat_session.php?new=true" class="btn-new-chat">
                         <i class="fas fa-plus-circle"></i>
                         <span>Chat Baru</span>
                     </a>
-                </div>
+                </div> -->
             </div>
 
             <!-- Filter Section -->
@@ -328,10 +328,10 @@ $statistik_status = $stmt->fetchAll(PDO::FETCH_KEY_PAIR);
                             </div>
                             <h3>Tidak ada sesi chat</h3>
                             <p><?php echo $status != 'semua' ? "Tidak ada sesi dengan status '$status'" : "Belum ada sesi chat yang dibuat"; ?></p>
-                            <a href="chat_session.php?new=true" class="btn-new-session">
+                            <!-- <a href="chat_session.php?new=true" class="btn-new-session">
                                 <i class="fas fa-plus"></i>
                                 Buat Sesi Baru
-                            </a>
+                            </a> -->
                         </div>
                     <?php endif; ?>
                 </div>
