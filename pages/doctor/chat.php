@@ -97,7 +97,7 @@ if (!empty($search)) {
     $params[] = $searchTerm;
 }
 
-$sql .= " GROUP BY sc.id ORDER BY COALESCE(pesan_terakhir, sc.diperbarui_pada) DESC";
+// $sql .= " GROUP BY sc.id ORDER BY COALESCE(pesan_terakhir, sc.diperbarui_pada) DESC";
 
 error_log("SQL Query: " . $sql);
 error_log("Params: " . print_r($params, true));
@@ -671,6 +671,7 @@ $statistik_status = $stmt->fetchAll(PDO::FETCH_KEY_PAIR);
             setTimeout(refreshChatList, 500);
         }
     </script>
+    <script src="../../assets/js/doctor_sidebar.js"></script>
 </body>
 
 </html>

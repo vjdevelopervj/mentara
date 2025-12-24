@@ -22,6 +22,6 @@ header .nav-links li .btn-login:hover {
     border: 1px solid #ffffff !important;
 }
 
-.chat-container {
+.patient-chat .chat-container {
     margin-top: 10rem;
 }

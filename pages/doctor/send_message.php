@@ -23,18 +23,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['message']) && isset($
     if ($row && $row['id_dokter'] == $id_pengguna) {
         $stmt = $pdo->prepare("INSERT INTO pesan (id_sesi, pengirim, pesan) VALUES (?, 'dokter', ?)");
         $stmt->execute([$id_sesi, $pesan]);
+        $message_id = (int) $pdo->lastInsertId();
 
         // Update sesi_chat diperbarui_pada
         $stmtUp = $pdo->prepare("UPDATE sesi_chat SET diperbarui_pada = NOW() WHERE id = ?");
         $stmtUp->execute([$id_sesi]);
 
-        // Kembalikan daftar pesan terbaru untuk sesi ini
-        $stmt2 = $pdo->prepare("SELECT p.*, CASE WHEN p.pengirim = 'dokter' THEN COALESCE(d.nama, 'Dokter') ELSE 'Pasien' END as nama_pengirim FROM pesan p LEFT JOIN sesi_chat sc ON p.id_sesi = sc.id LEFT JOIN pengguna d ON sc.id_dokter = d.id WHERE p.id_sesi = ? ORDER BY p.dibuat_pada ASC");
-        $stmt2->execute([$id_sesi]);
-        $messages = $stmt2->fetchAll(PDO::FETCH_ASSOC);
+        // Kembalikan pesan terbaru untuk sesi ini
+        $stmt2 = $pdo->prepare("SELECT p.id, p.id_sesi, p.pengirim, p.pesan, p.dibuat_pada,
+            CASE WHEN p.pengirim = 'dokter' THEN COALESCE(d.nama, 'Dokter')
+                 WHEN p.pengirim = 'sistem' THEN 'Sistem'
+                 ELSE 'Pasien' END as nama_pengirim
+            FROM pesan p
+            LEFT JOIN sesi_chat sc ON p.id_sesi = sc.id
+            LEFT JOIN pengguna d ON sc.id_dokter = d.id
+            WHERE p.id = ?");
+        $stmt2->execute([$message_id]);
+        $message_row = $stmt2->fetch(PDO::FETCH_ASSOC);
 
         header('Content-Type: application/json');
-        echo json_encode(['success' => true, 'messages' => $messages]);
+        echo json_encode(['success' => true, 'message' => $message_row]);
         exit;
     }
 

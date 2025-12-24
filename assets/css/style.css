@@ -864,3 +864,159 @@ footer {
     border-color: #4361ee;
     box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.1);
 }
+
+/* Rating Page */
+.rating-page {
+    padding: 120px 0 60px;
+    background: #f4f6fb;
+}
+
+.rating-card {
+    max-width: 560px;
+    margin: 0 auto;
+    width: 100%;
+    background: #fff;
+    border-radius: 16px;
+    padding: 2rem;
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.08);
+}
+
+.rating-header {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.rating-icon {
+    width: 56px;
+    height: 56px;
+    border-radius: 16px;
+    background: #e8f1ff;
+    color: #3498db;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+}
+
+.rating-icon.success {
+    background: #e6f7ef;
+    color: #28a745;
+    margin: 0 auto 1rem;
+}
+
+.rating-title {
+    margin: 0;
+    font-size: 1.6rem;
+    color: #2c3e50;
+}
+
+.rating-subtitle {
+    color: #6b7c93;
+    margin-top: 0.25rem;
+}
+
+.rating-form {
+    margin-top: 1rem;
+}
+
+.rating-card .form-group input,
+.rating-card .form-group textarea,
+.rating-card .form-group select {
+    background: #f8fafc;
+    border: 1px solid #e1e6ef;
+    border-radius: 12px;
+    padding: 0.75rem 1rem;
+}
+
+.rating-card .rating-stars {
+    display: inline-flex;
+    flex-direction: row-reverse;
+    justify-content: flex-end;
+    gap: 0.4rem;
+    align-items: center;
+    position: relative;
+    flex-wrap: wrap;
+}
+
+.rating-card .rating-stars input {
+    position: absolute;
+    opacity: 0;
+    width: 1px;
+    height: 1px;
+    margin: 0;
+    padding: 0;
+    border: 0;
+}
+
+.rating-card .rating-stars label {
+    font-size: 1.8rem;
+    color: #d6dbe4;
+    cursor: pointer;
+    transition: color 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 0;
+    line-height: 1;
+    position: relative;
+    z-index: 1;
+    padding: 0.15rem;
+}
+
+.rating-card .rating-stars label i {
+    color: inherit;
+}
+
+.rating-card .rating-stars input:checked ~ label {
+    color: #f4b400;
+}
+
+.rating-card .rating-stars label:hover,
+.rating-card .rating-stars label:hover ~ label {
+    color: #f4b400;
+}
+
+.rating-hint {
+    display: block;
+    margin-top: 0.5rem;
+    color: #7a8aa0;
+    font-size: 0.85rem;
+}
+
+.btn-rating {
+    width: 100%;
+    padding: 0.75rem 1.5rem;
+    border-radius: 12px;
+    font-weight: 600;
+}
+
+.rating-success {
+    text-align: center;
+}
+
+.rating-success h2 {
+    margin: 0 0 0.5rem;
+    color: #2c3e50;
+}
+
+.rating-success p {
+    margin-bottom: 1.5rem;
+    color: #6b7c93;
+}
+
+@media (max-width: 768px) {
+    .rating-page {
+        padding-top: 100px;
+    }
+
+    .rating-card {
+        padding: 1.5rem;
+    }
+
+    .rating-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+}

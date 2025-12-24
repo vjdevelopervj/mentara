@@ -26,16 +26,25 @@ if (trim($message) === '') {
 try {
     $stmt = $pdo->prepare("INSERT INTO pesan (id_sesi, pengirim, pesan) VALUES (?, 'pasien', ?)");
     $stmt->execute([$id_sesi, $message]);
+    $message_id = (int) $pdo->lastInsertId();
 
     // Update sesi_chat diperbarui_pada
     $stmtUp = $pdo->prepare("UPDATE sesi_chat SET diperbarui_pada = NOW() WHERE id = ?");
     $stmtUp->execute([$id_sesi]);
-    // Ambil pesan terbaru untuk dikembalikan
-    $stmt2 = $pdo->prepare("SELECT p.*, CASE WHEN p.pengirim = 'dokter' THEN COALESCE(d.nama, 'Dokter') ELSE 'Pasien' END as nama_pengirim FROM pesan p LEFT JOIN sesi_chat sc ON p.id_sesi = sc.id LEFT JOIN pengguna d ON sc.id_dokter = d.id WHERE p.id_sesi = ? ORDER BY p.dibuat_pada ASC");
-    $stmt2->execute([$id_sesi]);
-    $messages = $stmt2->fetchAll(PDO::FETCH_ASSOC);
 
-    echo json_encode(['success' => true, 'messages' => $messages]);
+    // Ambil pesan terbaru untuk dikembalikan
+    $stmt2 = $pdo->prepare("SELECT p.id, p.id_sesi, p.pengirim, p.pesan, p.dibuat_pada,
+        CASE WHEN p.pengirim = 'dokter' THEN COALESCE(d.nama, 'Dokter')
+             WHEN p.pengirim = 'sistem' THEN 'Sistem'
+             ELSE 'Pasien' END as nama_pengirim
+        FROM pesan p
+        LEFT JOIN sesi_chat sc ON p.id_sesi = sc.id
+        LEFT JOIN pengguna d ON sc.id_dokter = d.id
+        WHERE p.id = ?");
+    $stmt2->execute([$message_id]);
+    $message_row = $stmt2->fetch(PDO::FETCH_ASSOC);
+
+    echo json_encode(['success' => true, 'message' => $message_row]);
 } catch (Exception $e) {
     echo json_encode(['success' => false, 'error' => $e->getMessage()]);
 }

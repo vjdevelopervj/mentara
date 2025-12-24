@@ -90,6 +90,32 @@ body {
     font-size: 1.1rem;
 }
 
+.sidebar-toggle {
+    position: fixed;
+    top: 1rem;
+    left: 1rem;
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    border: 1px solid #e0e0e0;
+    background: white;
+    color: var(--dark);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    z-index: 1200;
+    box-shadow: var(--shadow);
+}
+
+.sidebar-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.35);
+    z-index: 1100;
+}
+
 /* Main Content */
 .main-content {
     flex: 1;
@@ -309,6 +335,15 @@ body {
     flex-direction: column;
     background: #f5f7fb;
     overflow: hidden;
+}
+
+.patient-chat {
+    padding-bottom: 2rem;
+}
+
+.chat-footer-actions {
+    text-align: center;
+    margin: 1.5rem 0 2rem;
 }
 
 /* Chat Messages Wrapper */
@@ -835,16 +870,29 @@ body {
 }
 
 @media (max-width: 768px) {
-    .doctor-container {
-        flex-direction: column;
-    }
-    
     .sidebar {
-        width: 100%;
-        position: static;
-        height: auto;
+        width: 260px;
+        position: fixed;
+        top: 0;
+        left: 0;
+        height: 100vh;
+        transform: translateX(-100%);
+        transition: var(--transition);
+        z-index: 1300;
     }
-    
+
+    body.sidebar-open .sidebar {
+        transform: translateX(0);
+    }
+
+    body.sidebar-open .sidebar-overlay {
+        display: block;
+    }
+
+    .sidebar-toggle {
+        display: inline-flex;
+    }
+
     .main-content {
         margin-left: 0;
     }

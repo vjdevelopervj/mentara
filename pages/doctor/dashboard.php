@@ -346,5 +346,6 @@ $sesi_terbaru = $stmt->fetchAll();
             location.reload();
         }, 60000);
     </script>
+    <script src="../../assets/js/doctor_sidebar.js"></script>
 </body>
 </html>

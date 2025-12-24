@@ -37,53 +37,77 @@ $history = $stmt->fetchAll();
         </div>
 
         <div class="main-content">
-            <h1>History Konsultasi</h1>
+            <div class="dashboard-header">
+                <h1>History Konsultasi</h1>
+            </div>
 
-            <?php if (count($history) > 0): ?>
-                <table class="table">
-                    <thead>
-                        <tr>
-                            <th>Tanggal</th>
-                            <th>Pasien</th>
-                            <th>Usia</th>
-                            <th>Keluhan</th>
-                            <th>Pesan</th>
-                            <th>Rating</th>
-                            <th>Aksi</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <?php foreach ($history as $sesi): ?>
-                        <tr>
-                            <td><?php echo date('d/m/Y H:i', strtotime($sesi['diperbarui_pada'])); ?></td>
-                            <td><?php echo htmlspecialchars($sesi['nama_pasien']); ?></td>
-                            <td><?php echo $sesi['usia_pasien']; ?></td>
-                            <td><?php echo htmlspecialchars($sesi['keluhan']); ?></td>
-                            <td><?php echo $sesi['jumlah_pesan']; ?></td>
-                            <td>
-                                <?php if ($sesi['rating']): ?>
-                                    <?php for ($i = 1; $i <= 5; $i++): ?>
-                                        <i class="fas fa-star" style="color: <?php echo $i <= $sesi['rating'] ? '#ffc107' : '#ddd'; ?>"></i>
-                                    <?php endfor; ?>
-                                <?php else: ?>
-                                    Belum ada rating
-                                <?php endif; ?>
-                            </td>
-                            <td>
-                                <a href="notes.php?id_sesi=<?php echo $sesi['id']; ?>" class="btn">Lihat Catatan</a>
-                            </td>
-                        </tr>
-                        <?php endforeach; ?>
-                    </tbody>
-                </table>
-            <?php else: ?>
-                <p>Belum ada history konsultasi.</p>
-            <?php endif; ?>
+            <div class="content-area">
+                <div class="content-section">
+                    <div class="section-header">
+                        <h3><i class="fas fa-history"></i> Riwayat Konsultasi</h3>
+                    </div>
+                    <div class="section-body">
+                        <?php if (count($history) > 0): ?>
+                            <table class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th>Tanggal</th>
+                                        <th>Pasien</th>
+                                        <th>Usia</th>
+                                        <th>Keluhan</th>
+                                        <th>Pesan</th>
+                                        <th>Rating</th>
+                                        <th>Aksi</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <?php foreach ($history as $sesi): ?>
+                                    <tr>
+                                        <td><?php echo date('d/m/Y H:i', strtotime($sesi['diperbarui_pada'])); ?></td>
+                                        <td><?php echo htmlspecialchars($sesi['nama_pasien']); ?></td>
+                                        <td><?php echo $sesi['usia_pasien']; ?></td>
+                                        <td>
+                                            <div class="complaint-preview">
+                                                <?php echo potongTeks($sesi['keluhan'], 80); ?>
+                                            </div>
+                                        </td>
+                                        <td><?php echo $sesi['jumlah_pesan']; ?></td>
+                                        <td>
+                                            <?php if ($sesi['rating']): ?>
+                                                <?php for ($i = 1; $i <= 5; $i++): ?>
+                                                    <i class="fas fa-star" style="color: <?php echo $i <= $sesi['rating'] ? '#ffc107' : '#ddd'; ?>"></i>
+                                                <?php endfor; ?>
+                                            <?php else: ?>
+                                                Belum ada rating
+                                            <?php endif; ?>
+                                        </td>
+                                        <td>
+                                            <div class="table-actions">
+                                                <a href="notes.php?id_sesi=<?php echo $sesi['id']; ?>" class="btn-icon" title="Lihat Catatan">
+                                                    <i class="fas fa-file-medical"></i>
+                                                </a>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    <?php endforeach; ?>
+                                </tbody>
+                            </table>
+                        <?php else: ?>
+                            <div class="empty-state">
+                                <i class="fas fa-history"></i>
+                                <h4>Belum ada history konsultasi</h4>
+                                <p>Belum ada sesi konsultasi yang selesai.</p>
+                            </div>
+                        <?php endif; ?>
 
-            <div style="margin-top: 2rem;">
-                <a href="dashboard.php" class="btn btn-primary">Kembali ke Dashboard</a>
+                        <div class="form-actions">
+                            <a href="dashboard.php" class="btn btn-primary">Kembali ke Dashboard</a>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
+    <script src="../../assets/js/doctor_sidebar.js"></script>
 </body>
 </html>

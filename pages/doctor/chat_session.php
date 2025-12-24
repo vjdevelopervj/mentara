@@ -50,10 +50,10 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['status'])) {
     
     if ($status == 'selesai') {
         $stmt = $pdo->prepare("
-            INSERT INTO pesan (id_sesi, pengirim, id, pesan) 
-            VALUES (?, 'sistem', ?, 'Sesi konseling telah selesai. Terima kasih.')
+            INSERT INTO pesan (id_sesi, pengirim, pesan) 
+            VALUES (?, 'sistem', 'Sesi konseling telah selesai. Terima kasih.')
         ");
-        $stmt->execute([$id_sesi, $id_pengguna]);
+        $stmt->execute([$id_sesi]);
     }
     
     header("Location: chat_session.php?id_sesi=$id_sesi");
@@ -353,11 +353,15 @@ $pesan_pasien = count(array_filter($messages, fn($m) => $m['pengirim'] === 'pasi
         // expose session id to the external JS
         window.SESSION_ID = <?php echo json_encode($id_sesi); ?>;
         window.GET_MESSAGES_URL = '../../get_messages.php';
-        // For doctor view we want to fetch messages coming from pasien
-        window.ONLY_FROM = 'pasien';
+        // For doctor view we only long-poll pasien messages
+        window.LONGPOLL_ONLY_FROM = 'pasien';
+        window.TYPING_URL = '../../typing.php';
+        window.LOCAL_ROLE = 'dokter';
+        window.REMOTE_ROLE = 'pasien';
     </script>
     <script>
         // No realtime socket configured; using polling only
     </script>
+    <script src="../../assets/js/doctor_sidebar.js"></script>
 </body>
 </html>

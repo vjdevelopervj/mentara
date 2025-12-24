@@ -35,7 +35,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Profile Dokter - Mentara</title>
-    <link rel="stylesheet" href="../../assets/css/doctor.css">
+    <?php $doctor_css_version = filemtime(__DIR__ . '/../../assets/css/doctor.css'); ?>
+    <link rel="stylesheet" href="../../assets/css/doctor.css?v=<?php echo $doctor_css_version; ?>">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
 <body>
@@ -53,40 +54,51 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         </div>
 
         <div class="main-content">
-            <h1>Profile Dokter</h1>
+            <div class="dashboard-header">
+                <h1>Profile Dokter</h1>
+            </div>
 
-            <?php if (isset($berhasil)): ?>
-                <p style="color: green;"><?php echo $berhasil; ?></p>
-            <?php endif; ?>
+            <div class="content-area">
+                <div class="content-section">
+                    <div class="section-header">
+                        <h3><i class="fas fa-user-cog"></i> Informasi Profil</h3>
+                    </div>
+                    <div class="section-body">
+                        <?php if (isset($berhasil)): ?>
+                            <div class="alert alert-success"><?php echo $berhasil; ?></div>
+                        <?php endif; ?>
 
-            <form action="profile.php" method="post" style="max-width: 600px;">
-                <div class="form-group">
-                    <label for="nama_pengguna">Nama Pengguna:</label>
-                    <input type="text" id="nama_pengguna" value="<?php echo htmlspecialchars($pengguna['nama_pengguna']); ?>" disabled>
+                        <form action="profile.php" method="post" class="form-card profile-form">
+                            <div class="form-group full">
+                                <label for="nama_pengguna">Nama Pengguna:</label>
+                                <input type="text" id="nama_pengguna" value="<?php echo htmlspecialchars($pengguna['nama_pengguna']); ?>" disabled>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="nama">Nama Lengkap:</label>
+                                <input type="text" id="nama" name="nama" value="<?php echo htmlspecialchars($pengguna['nama']); ?>" required>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="spesialisasi">Spesialisasi:</label>
+                                <input type="text" id="spesialisasi" name="spesialisasi" value="<?php echo htmlspecialchars($pengguna['spesialisasi']); ?>" required>
+                            </div>
+
+                            <div class="form-group full">
+                                <label for="jadwal">Jadwal Konsultasi:</label>
+                                <textarea id="jadwal" name="jadwal" rows="4" required><?php echo htmlspecialchars($pengguna['jadwal']); ?></textarea>
+                            </div>
+
+                            <div class="form-actions">
+                                <button type="submit" class="btn btn-primary">Perbarui Profile</button>
+                                <a href="dashboard.php" class="btn btn-secondary">Kembali ke Dashboard</a>
+                            </div>
+                        </form>
+                    </div>
                 </div>
-
-                <div class="form-group">
-                    <label for="nama">Nama Lengkap:</label>
-                    <input type="text" id="nama" name="nama" value="<?php echo htmlspecialchars($pengguna['nama']); ?>" required>
-                </div>
-
-                <div class="form-group">
-                    <label for="spesialisasi">Spesialisasi:</label>
-                    <input type="text" id="spesialisasi" name="spesialisasi" value="<?php echo htmlspecialchars($pengguna['spesialisasi']); ?>" required>
-                </div>
-
-                <div class="form-group">
-                    <label for="jadwal">Jadwal Konsultasi:</label>
-                    <textarea id="jadwal" name="jadwal" rows="4" required><?php echo htmlspecialchars($pengguna['jadwal']); ?></textarea>
-                </div>
-
-                <button type="submit" class="btn">Perbarui Profile</button>
-            </form>
-
-            <div style="margin-top: 2rem;">
-                <a href="dashboard.php" class="btn btn-primary">Kembali ke Dashboard</a>
             </div>
         </div>
     </div>
+    <script src="../../assets/js/doctor_sidebar.js"></script>
 </body>
 </html>

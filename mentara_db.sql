@@ -86,7 +86,7 @@ INSERT INTO `pengguna` (`id`, `nama_pengguna`, `kata_sandi`, `peran`, `nama`, `s
 CREATE TABLE `pesan` (
   `id` int NOT NULL,
   `id_sesi` int NOT NULL,
-  `pengirim` enum('pasien','dokter') NOT NULL,
+  `pengirim` enum('pasien','dokter','sistem') NOT NULL,
   `pesan` text NOT NULL,
   `dibuat_pada` timestamp NULL DEFAULT CURRENT_TIMESTAMP
 );
@@ -117,7 +117,7 @@ CREATE TABLE `sesi_chat` (
   `usia_pasien` int NOT NULL,
   `keluhan` text NOT NULL,
   `id_dokter` int DEFAULT NULL,
-  `status` enum('aktif','selesai') DEFAULT 'aktif',
+  `status` enum('aktif','selesai','dibatalkan') DEFAULT 'aktif',
   `catatan_dokter` text,
   `rating` int DEFAULT NULL,
   `komentar_rating` text,
@@ -130,10 +130,12 @@ CREATE TABLE `sesi_chat` (
 --
 
 INSERT INTO `sesi_chat` (`id`, `nama_pasien`, `usia_pasien`, `keluhan`, `id_dokter`, `status`, `catatan_dokter`, `rating`, `komentar_rating`, `dibuat_pada`, `diperbarui_pada`) VALUES
-(1, 'Dika Pratama', 24, 'Kesehatan mental saya kurang baik', NULL, 'selesai', NULL, 5, '', '2025-11-25 02:29:18', '2025-11-25 02:30:02'),
-(2, 'luthfi', 23, 'pilek batuk', NULL, 'aktif', NULL, NULL, NULL, '2025-12-01 03:05:19', '2025-12-01 03:05:19'),
-(3, 'luthfi', 23, 'pilek batuk', NULL, 'aktif', NULL, NULL, NULL, '2025-12-01 03:05:21', '2025-12-01 03:05:21'),
-(4, 'Fariz', 50, 'Kebelet ee', NULL, 'aktif', NULL, NULL, NULL, '2025-12-02 02:28:04', '2025-12-02 02:28:04');
+(1, 'Dika Pratama', 24, 'Kesehatan mental saya kurang baik', 2, 'selesai', NULL, 5, '', '2025-11-25 02:29:18', '2025-11-25 02:30:02'),
+(2, 'luthfi', 23, 'pilek batuk', 3, 'aktif', NULL, NULL, NULL, '2025-12-01 03:05:19', '2025-12-01 03:05:19'),
+(3, 'luthfi', 23, 'pilek batuk', 4, 'dibatalkan', NULL, NULL, NULL, '2025-12-01 03:05:21', '2025-12-01 03:06:10'),
+(4, 'Fariz', 50, 'Kebelet ee', 5, 'aktif', NULL, NULL, NULL, '2025-12-02 02:28:04', '2025-12-02 02:28:04'),
+(5, 'Rina', 29, 'Cemas berlebihan', 5, 'selesai', 'Pasien lebih tenang setelah sesi.', 4, 'Dokter komunikatif dan jelas.', '2025-12-03 01:12:00', '2025-12-03 01:40:00'),
+(6, 'Bima', 32, 'Sulit tidur', 3, 'selesai', 'Sarankan sleep hygiene dan jurnal tidur.', 5, 'Sangat membantu, terima kasih.', '2025-12-05 10:05:00', '2025-12-05 10:45:00');
 
 --
 -- Indexes for dumped tables

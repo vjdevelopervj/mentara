@@ -3,6 +3,17 @@
 // Global variables
 let selectedMessageId = null;
 let isTyping = false;
+let typingUrl = null;
+let localRole = null;
+let remoteRole = null;
+let lastTypingTs = 0;
+let typingHideTimer = null;
+let typingIdleTimer = null;
+let typingLastSentAt = 0;
+
+const typingThrottleMs = 1200;
+const typingIdleMs = 1800;
+const typingVisibleMs = 4000;
 
 // Auto scroll to bottom
 function scrollToBottom() {
@@ -17,15 +28,86 @@ function autoResize(textarea) {
     textarea.style.height = 'auto';
     textarea.style.height = (textarea.scrollHeight) + 'px';
     isTyping = textarea.value.length > 0;
+    handleTypingInput(textarea.value);
+}
+
+function handleTypingInput(value) {
+    if (!typingUrl || !localRole || typeof window.SESSION_ID === 'undefined') return;
+    const trimmed = value.trim();
+    if (!trimmed) {
+        scheduleTypingStop();
+        return;
+    }
+
+    const now = Date.now();
+    if ((now - typingLastSentAt) >= typingThrottleMs) {
+        typingLastSentAt = now;
+        sendTyping('typing');
+    }
+
+    if (typingIdleTimer) {
+        clearTimeout(typingIdleTimer);
+    }
+    typingIdleTimer = setTimeout(() => {
+        sendTyping('stop');
+    }, typingIdleMs);
+}
+
+function scheduleTypingStop() {
+    if (!typingUrl || !localRole || typeof window.SESSION_ID === 'undefined') return;
+    if (typingIdleTimer) {
+        clearTimeout(typingIdleTimer);
+    }
+    typingIdleTimer = setTimeout(() => {
+        sendTyping('stop');
+    }, 0);
+}
+
+function sendTyping(status) {
+    if (!typingUrl || !localRole || typeof window.SESSION_ID === 'undefined') return;
+    const payload = new URLSearchParams({
+        id_sesi: window.SESSION_ID,
+        role: localRole,
+        status
+    });
+    fetch(typingUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: payload
+    }).catch(() => {});
+}
+
+function setTypingIndicator(isActive) {
+    const indicator = document.getElementById('typingIndicator');
+    if (!indicator) return;
+    if (isActive) {
+        indicator.style.display = 'flex';
+        if (typingHideTimer) {
+            clearTimeout(typingHideTimer);
+        }
+        typingHideTimer = setTimeout(() => {
+            indicator.style.display = 'none';
+        }, typingVisibleMs);
+    } else {
+        indicator.style.display = 'none';
+        if (typingHideTimer) {
+            clearTimeout(typingHideTimer);
+        }
+    }
+}
+
+function applyTypingState(typing) {
+    if (!typing || !remoteRole) {
+        setTypingIndicator(false);
+        return;
+    }
+    setTypingIndicator(Boolean(typing[remoteRole]));
 }
 
 // Load messages with AJAX
 function loadMessages() {
     if (typeof window.SESSION_ID === 'undefined' || typeof window.GET_MESSAGES_URL === 'undefined') return;
     let url = `${window.GET_MESSAGES_URL}?id_sesi=${window.SESSION_ID}`;
-    if (typeof window.ONLY_FROM !== 'undefined' && window.ONLY_FROM) {
-        url += `&only_from=${encodeURIComponent(window.ONLY_FROM)}`;
-    }
     fetch(url)
         .then(response => response.json())
         .then(data => {
@@ -52,9 +134,13 @@ function loadMessages() {
                             </div>
                         `;
                     } else {
+                        lastMessageId = 0;
                         data.messages.forEach(message => {
                             const messageDiv = createMessageElement(message);
                             messagesContainer.appendChild(messageDiv);
+                            if (message.id && message.id > lastMessageId) {
+                                lastMessageId = message.id;
+                            }
                         });
                         
                         if (wasScrolledToBottom) {
@@ -123,9 +209,7 @@ document.getElementById('chatForm')?.addEventListener('submit', async function(e
     const message = messageInput.value.trim();
     
     if (!message) return;
-    
-    showTypingIndicator();
-    
+
     try {
         const response = await fetch('send_message.php', {
             method: 'POST',
@@ -137,12 +221,23 @@ document.getElementById('chatForm')?.addEventListener('submit', async function(e
         if (data.success) {
             messageInput.value = '';
             messageInput.style.height = 'auto';
-            hideTypingIndicator();
-            // If endpoint returned messages use them to update immediately, otherwise trigger load
-            if (data.messages && Array.isArray(data.messages)) {
-                const messagesContainer = document.getElementById('chatMessages');
+            sendTyping('stop');
+            const messagesContainer = document.getElementById('chatMessages');
+            // If endpoint returned a single message, append it
+            if (data.message) {
+                messagesContainer.appendChild(createMessageElement(data.message));
+                if (data.message.id && data.message.id > lastMessageId) {
+                    lastMessageId = data.message.id;
+                }
+                setTimeout(scrollToBottom, 50);
+            } else if (data.messages && Array.isArray(data.messages)) {
                 messagesContainer.innerHTML = '';
-                data.messages.forEach(message => messagesContainer.appendChild(createMessageElement(message)));
+                data.messages.forEach(message => {
+                    messagesContainer.appendChild(createMessageElement(message));
+                    if (message.id && message.id > lastMessageId) {
+                        lastMessageId = message.id;
+                    }
+                });
                 setTimeout(scrollToBottom, 100);
             } else {
                 loadMessages();
@@ -181,18 +276,6 @@ function replyToMessage(messageId) {
         const messageText = messageElement.querySelector('.message-body').textContent;
         showNotification(`Membalas: ${messageText.substring(0, 50)}...`);
     }
-}
-
-// Show typing indicator
-function showTypingIndicator() {
-    const indicator = document.getElementById('typingIndicator');
-    if (indicator) indicator.style.display = 'flex';
-}
-
-// Hide typing indicator
-function hideTypingIndicator() {
-    const indicator = document.getElementById('typingIndicator');
-    if (indicator) indicator.style.display = 'none';
 }
 
 // Show notification
@@ -241,9 +324,6 @@ function initialLoadAndStart() {
     if (typeof window.SESSION_ID === 'undefined' || typeof window.GET_MESSAGES_URL === 'undefined') return;
     // load current messages once
     let url = `${window.GET_MESSAGES_URL}?id_sesi=${window.SESSION_ID}`;
-    if (typeof window.ONLY_FROM !== 'undefined' && window.ONLY_FROM) {
-        url += `&only_from=${encodeURIComponent(window.ONLY_FROM)}`;
-    }
     fetch(url)
         .then(r => r.json())
         .then(data => {
@@ -269,8 +349,10 @@ function initialLoadAndStart() {
 function startLongPoll() {
     if (typeof window.SESSION_ID === 'undefined') return;
     const lpUrl = getLongPollUrl();
-    let url = `${lpUrl}?id_sesi=${window.SESSION_ID}&since_id=${lastMessageId}`;
-    if (typeof window.ONLY_FROM !== 'undefined' && window.ONLY_FROM) {
+    let url = `${lpUrl}?id_sesi=${window.SESSION_ID}&since_id=${lastMessageId}&typing_ts=${lastTypingTs}`;
+    if (typeof window.LONGPOLL_ONLY_FROM !== 'undefined' && window.LONGPOLL_ONLY_FROM) {
+        url += `&only_from=${encodeURIComponent(window.LONGPOLL_ONLY_FROM)}`;
+    } else if (typeof window.ONLY_FROM !== 'undefined' && window.ONLY_FROM) {
         url += `&only_from=${encodeURIComponent(window.ONLY_FROM)}`;
     }
     fetch(url, { cache: 'no-store' })
@@ -285,6 +367,12 @@ function startLongPoll() {
                 });
                 if (wasAtBottom) setTimeout(scrollToBottom, 50);
             }
+            if (data && typeof data.typing_ts !== 'undefined') {
+                lastTypingTs = data.typing_ts;
+            }
+            if (data && data.typing) {
+                applyTypingState(data.typing);
+            }
             // reconnect immediately
             setTimeout(startLongPoll, 50);
         })
@@ -296,6 +384,10 @@ function startLongPoll() {
 
 // Initial setup
 document.addEventListener('DOMContentLoaded', function() {
+    typingUrl = typeof window.TYPING_URL !== 'undefined' ? window.TYPING_URL : null;
+    localRole = typeof window.LOCAL_ROLE !== 'undefined' ? window.LOCAL_ROLE : null;
+    remoteRole = typeof window.REMOTE_ROLE !== 'undefined' ? window.REMOTE_ROLE : null;
+
     scrollToBottom();
     initialLoadAndStart();
     
@@ -308,6 +400,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 document.getElementById('chatForm').dispatchEvent(new Event('submit'));
             }
         });
+        messageInput.addEventListener('blur', scheduleTypingStop);
         messageInput.focus();
     }
 });
